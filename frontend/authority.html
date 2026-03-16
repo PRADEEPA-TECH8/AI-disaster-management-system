@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Nadu — State Disaster Authority · Executive Command</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg:       #04070f;
+            --s0:       #070c1a;
+            --s1:       #0a1020;
+            --s2:       #0e1628;
+            --s3:       #131e35;
+            --border:   #182640;
+            --border-hi:#1f3255;
+
+            --red:      #f43f5e;
+            --red-dim:  rgba(244,63,94,0.1);
+            --amber:    #f59e0b;
+            --amber-dim:rgba(245,158,11,0.1);
+            --green:    #10b981;
+            --green-dim:rgba(16,185,129,0.1);
+            --blue:     #3b82f6;
+            --blue-dim: rgba(59,130,246,0.1);
+            --cyan:     #06b6d4;
+            --purple:   #8b5cf6;
+
+            --text:   #e2e8f0;
+            --text-2: #7f9ab8;
+            --text-3: #3d5470;
+
+            --fd:  'Rajdhani', sans-serif;
+            --fb:  'IBM Plex Sans', sans-serif;
+            --fm:  'IBM Plex Mono', monospace;
+
+            --hdr-h: 58px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%; font-family: var(--fb);
+            background: var(--bg); color: var(--text);
+            font-size: 13px; line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+        /* ══════════════════════════════════════
+           ALERT TICKER
+        ══════════════════════════════════════ */
+        .ticker-bar {
+            background: #1a0a00;
+            border-bottom: 1px solid rgba(245,158,11,0.25);
+            height: 30px; overflow: hidden;
+            display: flex; align-items: center;
+        }
+
+        .ticker-label {
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            color: var(--amber); text-transform: uppercase; letter-spacing: 2px;
+            padding: 0 14px; white-space: nowrap;
+            border-right: 1px solid rgba(245,158,11,0.2);
+            height: 100%; display: flex; align-items: center;
+            background: rgba(245,158,11,0.07);
+        }
+
+        .ticker-track { flex: 1; overflow: hidden; position: relative; }
+        .ticker-inner {
+            display: inline-flex; gap: 60px;
+            white-space: nowrap;
+            animation: ticker-scroll 35s linear infinite;
+            font-family: var(--fm); font-size: 10px; color: var(--text-2);
+        }
+
+        @keyframes ticker-scroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item { display: inline-flex; align-items: center; gap: 8px; }
+        .ticker-item .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        /* ══════════════════════════════════════
+           HEADER
+        ══════════════════════════════════════ */
+        .hdr {
+            height: var(--hdr-h);
+            background: var(--s0);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            padding: 0 20px; gap: 14px;
+            position: sticky; top: 30px; z-index: 300;
+        }
+
+        .emblem {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #1e3a7a, #0c1e50);
+            border: 1px solid var(--border-hi);
+            border-radius: 8px; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+
+        .hdr-title { flex: 1; min-width: 0; }
+
+        .hdr-name {
+            font-family: var(--fd); font-size: 17px;
+            font-weight: 700; letter-spacing: 2px;
+            line-height: 1; color: var(--text);
+        }
+
+        .hdr-sub {
+            font-family: var(--fm); font-size: 9px;
+            color: var(--text-3); text-transform: uppercase;
+            letter-spacing: 2px; margin-top: 3px;
+        }
+
+        .hdr-nav { display: flex; gap: 6px; }
+
+        .hnav-btn {
+            padding: 6px 11px; border-radius: 5px;
+            font-family: var(--fd); font-size: 11px;
+            font-weight: 600; letter-spacing: 0.5px;
+            text-decoration: none; border: 1px solid;
+            transition: all 0.15s;
+        }
+
+        .hnav-btn.sos   { background:var(--red-dim);   color:var(--red);   border-color:rgba(244,63,94,0.2); }
+        .hnav-btn.vol   { background:var(--green-dim); color:var(--green); border-color:rgba(16,185,129,0.2); }
+        .hnav-btn.cmd   { background:var(--blue-dim);  color:var(--blue);  border-color:rgba(59,130,246,0.2); }
+        .hnav-btn:hover { filter: brightness(1.4); }
+
+        .hdr-meta { display: flex; align-items: center; gap: 12px; }
+
+        .live-badge {
+            display: flex; align-items: center; gap: 5px;
+            background: var(--green-dim); border: 1px solid rgba(16,185,129,0.2);
+            padding: 4px 10px; border-radius: 20px;
+        }
+
+        .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+        .live-txt { font-family: var(--fm); font-size: 9px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 1px; }
+
+        .ts-display { font-family: var(--fm); font-size: 10px; color: var(--text-3); }
+
+        /* ══════════════════════════════════════
+           PAGE BODY
+        ══════════════════════════════════════ */
+        .page { max-width: 1440px; margin: 0 auto; padding: 20px 18px 60px; }
+
+        /* ── Section label ── */
+        .sec-hdr {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .sec-label {
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            color: var(--text-3); text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        .sec-line { flex: 1; height: 1px; background: var(--border); }
+
+        .sec-count {
+            font-family: var(--fm); font-size: 10px;
+            background: var(--s3); color: var(--text-3);
+            padding: 2px 8px; border-radius: 10px;
+        }
+
+        /* ══════════════════════════════════════
+           KPI ROW
+        ══════════════════════════════════════ */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px; margin-bottom: 20px;
+        }
+
+        .kpi {
+            background: var(--s1); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px 18px;
+            border-top: 3px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: border-top-color 0.3s;
+        }
+
+        .kpi::before {
+            content: ''; position: absolute;
+            inset: 0; opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .kpi-val {
+            font-family: var(--fd); font-size: 36px;
+            font-weight: 700; line-height: 1; display: block;
+        }
+
+        .kpi-lbl {
+            font-family: var(--fm); font-size: 9px;
+            font-weight: 600; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 1.5px;
+            margin-top: 5px;
+        }
+
+        .kpi-trend {
+            position: absolute; top: 12px; right: 12px;
+            font-family: var(--fm); font-size: 9px;
+            font-weight: 600; padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        .kpi.red   { border-top-color: var(--red);   }
+        .kpi.red   .kpi-val { color: var(--red);   }
+        .kpi.red   .kpi-trend { background: var(--red-dim);   color: var(--red);   }
+
+        .kpi.amber { border-top-color: var(--amber); }
+        .kpi.amber .kpi-val { color: var(--amber); }
+        .kpi.amber .kpi-trend { background: var(--amber-dim); color: var(--amber); }
+
+        .kpi.green { border-top-color: var(--green); }
+        .kpi.green .kpi-val { color: var(--green); }
+        .kpi.green .kpi-trend { background: var(--green-dim); color: var(--green); }
+
+        .kpi.blue  { border-top-color: var(--blue);  }
+        .kpi.blue  .kpi-val { color: var(--blue);  }
+        .kpi.blue  .kpi-trend { background: var(--blue-dim);  color: var(--blue);  }
+
+        .kpi.purple { border-top-color: var(--purple); }
+        .kpi.purple .kpi-val { color: var(--purple); }
+        .kpi.purple .kpi-trend { background: rgba(139,92,246,0.1); color: var(--purple); }
+
+        /* ══════════════════════════════════════
+           DRILL-DOWN PANEL
+        ══════════════════════════════════════ */
+        #district-insight {
+            display: none;
+            background: var(--s1); border: 1px solid var(--border-hi);
+            border-left: 4px solid var(--blue);
+            border-radius: 10px; padding: 18px 20px;
+            margin-bottom: 18px; animation: fade-in 0.2s ease;
+        }
+
+        @keyframes fade-in { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
+
+        .insight-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .insight-name { font-family: var(--fd); font-size: 26px; font-weight: 700; letter-spacing: 1.5px; }
+        .insight-sev { font-family: var(--fm); font-size: 10px; font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        .insight-close {
+            background: none; border: 1px solid var(--border);
+            color: var(--text-3); padding: 5px 12px;
+            border-radius: 5px; cursor: pointer; font-size: 11px;
+            font-family: var(--fd); font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        .insight-close:hover { border-color: var(--red); color: var(--red); }
+
+        .insight-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+        .ist {
+            background: var(--s2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px 14px; text-align: center;
+        }
+
+        .ist-val { font-family: var(--fd); font-size: 26px; font-weight: 700; }
+        .ist-lbl { font-family: var(--fm); font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+
+        /* ══════════════════════════════════════
+           FILTER BAR
+        ══════════════════════════════════════ */
+        .filter-bar {
+            background: var(--s1); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 16px;
+            margin-bottom: 18px;
+            display: flex; align-items: center;
+            gap: 12px; flex-wrap: wrap;
+        }
+
+        .flbl {
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            color: var(--text-3); text-transform: uppercase; letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+
+        .fselect {
+            background: var(--s2); border: 1px solid var(--border-hi);
+            border-radius: 6px; padding: 8px 12px;
+            font-family: var(--fm); font-size: 11px; color: var(--text);
+            cursor: pointer; min-width: 200px; transition: border-color 0.15s;
+        }
+
+        .fselect:focus { outline: none; border-color: var(--blue); }
+
+        .sev-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .sev-chip {
+            padding: 5px 12px; border-radius: 20px;
+            font-family: var(--fm); font-size: 10px; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border);
+            background: var(--s2); transition: all 0.15s;
+        }
+
+        .sev-chip.critical { color: var(--red);   border-color: rgba(244,63,94,0.3); }
+        .sev-chip.active   { color: var(--amber); border-color: rgba(245,158,11,0.3); }
+        .sev-chip.standby  { color: var(--blue);  border-color: rgba(59,130,246,0.3); }
+        .sev-chip.clear    { color: var(--green); border-color: rgba(16,185,129,0.3); }
+        .sev-chip.selected { filter: brightness(1.5); font-weight: 700; }
+
+        .reset-btn {
+            padding: 7px 14px; background: none;
+            border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-3); font-family: var(--fd);
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            transition: all 0.15s; margin-left: auto;
+        }
+
+        .reset-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+        /* ══════════════════════════════════════
+           MAIN GRID: MAP + CHARTS
+        ══════════════════════════════════════ */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 440px;
+            gap: 18px; margin-bottom: 20px;
+        }
+
+        /* Map */
+        .map-panel {
+            background: var(--s1); border: 1px solid var(--border);
+            border-radius: 10px; overflow: hidden;
+            position: relative; min-height: 520px;
+        }
+
+        .map-panel-hdr {
+            position: absolute; top: 0; left: 0; right: 0;
+            z-index: 400; padding: 10px 14px;
+            background: linear-gradient(to bottom, rgba(7,12,26,0.9) 0%, transparent 100%);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .map-ttl {
+            font-family: var(--fd); font-size: 13px;
+            font-weight: 700; letter-spacing: 2px; color: var(--text);
+        }
+
+        #tn-map { height: 100%; min-height: 520px; }
+
+        .map-legend {
+            position: absolute; bottom: 14px; right: 14px; z-index: 400;
+            background: rgba(4,7,15,0.92); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .ml-ttl { font-family: var(--fm); font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+        .ml-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-2); margin-bottom: 5px; }
+        .ml-row:last-child { margin-bottom: 0; }
+        .ml-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+        /* Charts */
+        .charts-col { display: flex; flex-direction: column; gap: 14px; }
+
+        .chart-panel {
+            background: var(--s1); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px;
+            height: 220px; min-height: 220px;
+        }
+
+        .cpanel-hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .cpanel-ttl {
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            color: var(--text-3); text-transform: uppercase; letter-spacing: 2px;
+            border-left: 3px solid var(--blue); padding-left: 8px;
+        }
+
+        .cpanel-ttl.amber { border-left-color: var(--amber); }
+        .cpanel-ttl.green { border-left-color: var(--green); }
+        .cpanel-ttl.red   { border-left-color: var(--red); }
+
+        canvas { width: 100% !important; }
+
+        /* ══════════════════════════════════════
+           REGIONAL TABLE
+        ══════════════════════════════════════ */
+        .table-panel {
+            background: var(--s1); border: 1px solid var(--border);
+            border-radius: 10px; overflow: hidden; margin-bottom: 20px;
+        }
+
+        .tbl-hdr {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .tbl-title { font-family: var(--fd); font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th {
+            text-align: left; padding: 9px 14px;
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            color: var(--text-3); text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            background: var(--s2);
+        }
+
+        .data-table th:not(:first-child) { text-align: center; }
+        .data-table td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+        .data-table td:not(:first-child) { text-align: center; font-family: var(--fm); }
+        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr.crit td { background: rgba(244,63,94,0.04); }
+
+        .dist-name { font-weight: 600; color: var(--text); font-size: 13px; }
+        .dist-type { font-family: var(--fm); font-size: 9px; color: var(--text-3); }
+
+        .sev-pill {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-family: var(--fm); font-size: 9px; font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .sev-pill.critical { background: var(--red-dim);   color: var(--red);   }
+        .sev-pill.active   { background: var(--amber-dim); color: var(--amber); }
+        .sev-pill.standby  { background: var(--blue-dim);  color: var(--blue);  }
+        .sev-pill.clear    { background: var(--green-dim); color: var(--green); }
+
+        .bar-cell { display: flex; align-items: center; gap: 8px; justify-content: center; }
+        .mini-bar { width: 60px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .mini-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+        /* ══════════════════════════════════════
+           DISTRICT CARDS
+        ══════════════════════════════════════ */
+        .district-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
+        }
+
+        .dc {
+            background: var(--s1); border: 1px solid var(--border);
+            border-left: 4px solid var(--border);
+            border-radius: 10px; padding: 13px 14px;
+            cursor: pointer; transition: all 0.15s;
+        }
+
+        .dc:hover { background: var(--s2); border-left-color: var(--blue); }
+        .dc.critical { border-left-color: var(--red); }
+        .dc.active   { border-left-color: var(--amber); }
+        .dc.standby  { border-left-color: var(--blue); }
+        .dc.clear    { border-left-color: var(--green); }
+
+        .dc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .dc-name { font-family: var(--fd); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+
+        .dc-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 8px; }
+        .dcs { background: var(--s2); border-radius: 6px; padding: 7px 6px; text-align: center; }
+        .dcs-val { font-family: var(--fd); font-size: 18px; font-weight: 700; line-height: 1; }
+        .dcs-lbl { font-family: var(--fm); font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        .dc-bar-row { display: flex; align-items: center; gap: 7px; }
+        .dc-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .dc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+        .dc-bar-lbl { font-family: var(--fm); font-size: 9px; color: var(--text-3); white-space: nowrap; }
+
+        .crit-flag {
+            margin-top: 8px; padding: 5px 8px;
+            background: var(--red-dim); border: 1px solid rgba(244,63,94,0.2);
+            border-radius: 5px; font-family: var(--fm); font-size: 9px;
+            font-weight: 600; color: var(--red); text-align: center;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .empty-state { text-align: center; padding: 50px; color: var(--text-3); grid-column: 1/-1; }
+
+        /* ══════════════════════════════════════
+           LEAFLET
+        ══════════════════════════════════════ */
+        .leaflet-control-zoom { border: 1px solid var(--border-hi) !important; border-radius: 6px !important; overflow: hidden; }
+        .leaflet-control-zoom a { background: rgba(4,7,15,0.92) !important; color: var(--text-2) !important; width: 28px !important; height: 28px !important; line-height: 28px !important; border-bottom-color: var(--border) !important; }
+        .leaflet-control-zoom a:hover { background: var(--s3) !important; }
+        .leaflet-popup-content-wrapper { background: var(--s1) !important; border: 1px solid var(--border-hi) !important; border-radius: 8px !important; color: var(--text) !important; font-family: var(--fb) !important; box-shadow: 0 12px 30px rgba(0,0,0,0.6) !important; }
+        .leaflet-popup-tip { background: var(--s1) !important; }
+        .leaflet-popup-close-button { color: var(--text-3) !important; }
+
+        /* ══════════════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════════════ */
+        @media (max-width: 1100px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .charts-col { display: grid; grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-row { grid-template-columns: repeat(3,1fr); }
+            .hdr-nav { display: none; }
+            .charts-col { grid-template-columns: 1fr; }
+            .insight-stats { grid-template-columns: repeat(2,1fr); }
+            .filter-bar { gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-row { grid-template-columns: repeat(2,1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Alert Ticker -->
+<div class="ticker-bar">
+    <div class="ticker-label">⚠ LIVE ALERTS</div>
+    <div class="ticker-track">
+        <div class="ticker-inner" id="ticker-inner">
+            <span class="ticker-item"><span class="dot" style="background:var(--red)"></span> System loading — waiting for live data</span>
+            <span class="ticker-item"><span class="dot" style="background:var(--amber)"></span> Refresh interval: 10 seconds</span>
+            <span class="ticker-item"><span class="dot" style="background:var(--green)"></span> All field units connected</span>
+            <span class="ticker-item"><span class="dot" style="background:var(--red)"></span> System loading — waiting for live data</span>
+            <span class="ticker-item"><span class="dot" style="background:var(--amber)"></span> Refresh interval: 10 seconds</span>
+            <span class="ticker-item"><span class="dot" style="background:var(--green)"></span> All field units connected</span>
+        </div>
+    </div>
+</div>
+
+<!-- Header -->
+<header class="hdr">
+    <div class="emblem">🏛️</div>
+    <div class="hdr-title">
+        <div class="hdr-name">TAMIL NADU · STATE DISASTER AUTHORITY</div>
+        <div class="hdr-sub">Executive Command · Real-time monitoring of all 38 districts</div>
+    </div>
+    <div class="hdr-nav">
+        <a href="sos.html" class="hnav-btn sos">🆘 SOS Portal</a>
+        <a href="volunteer-app.html" class="hnav-btn vol">🤝 Field App</a>
+        <a href="commander.html" class="hnav-btn cmd">⚡ Command HQ</a>
+    </div>
+    <div class="hdr-meta">
+        <div class="ts-display" id="ts">–</div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            <span class="live-txt">Live · 10s</span>
+        </div>
+    </div>
+</header>
+
+<!-- Page Body -->
+<div class="page">
+
+    <!-- KPI Row -->
+    <div class="kpi-row" style="margin-top:18px;">
+        <div class="kpi red">
+            <span class="kpi-trend" id="tr-sos">–</span>
+            <span class="kpi-val" id="k-sos">–</span>
+            <div class="kpi-lbl">Total SOS Received</div>
+        </div>
+        <div class="kpi amber">
+            <span class="kpi-trend" id="tr-active">Active</span>
+            <span class="kpi-val" id="k-active">–</span>
+            <div class="kpi-lbl">Active Incidents</div>
+        </div>
+        <div class="kpi green">
+            <span class="kpi-trend" id="tr-rescued">↑ saved</span>
+            <span class="kpi-val" id="k-rescued">–</span>
+            <div class="kpi-lbl">People Rescued</div>
+        </div>
+        <div class="kpi blue">
+            <span class="kpi-trend" id="tr-resp">field</span>
+            <span class="kpi-val" id="k-resp">–</span>
+            <div class="kpi-lbl">Available Responders</div>
+        </div>
+        <div class="kpi purple">
+            <span class="kpi-trend">rate</span>
+            <span class="kpi-val" id="k-success">–</span>
+            <div class="kpi-lbl">Mission Success Rate</div>
+        </div>
+    </div>
+
+    <!-- District Drill-down -->
+    <div id="district-insight">
+        <div class="insight-hdr">
+            <div>
+                <div class="insight-name" id="insight-name">–</div>
+                <div class="insight-sev" id="insight-sev">–</div>
+            </div>
+            <button class="insight-close" onclick="closeInsight()">✕ Close</button>
+        </div>
+        <div class="insight-stats">
+            <div class="ist">
+                <div class="ist-val" id="insight-sos" style="color:var(--red)">–</div>
+                <div class="ist-lbl">Open SOS</div>
+            </div>
+            <div class="ist">
+                <div class="ist-val" id="insight-resp" style="color:var(--blue)">–</div>
+                <div class="ist-lbl">Total Responders</div>
+            </div>
+            <div class="ist">
+                <div class="ist-val" id="insight-miss" style="color:var(--amber)">–</div>
+                <div class="ist-lbl">Active Missions</div>
+            </div>
+            <div class="ist">
+                <div class="ist-val" id="insight-shelter" style="color:var(--green)">–</div>
+                <div class="ist-lbl">Shelter Load</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <span class="flbl">🔍 Filter District:</span>
+        <select class="fselect" id="district-select" onchange="onDistrictChange()">
+            <option value="">All 38 Districts</option>
+        </select>
+        <span class="flbl">Severity:</span>
+        <div class="sev-chips">
+            <div class="sev-chip critical" onclick="toggleSev(this,'critical')">🔴 Critical</div>
+            <div class="sev-chip active"   onclick="toggleSev(this,'active')">🟠 Active</div>
+            <div class="sev-chip standby"  onclick="toggleSev(this,'standby')">🔵 Standby</div>
+            <div class="sev-chip clear"    onclick="toggleSev(this,'clear')">🟢 Clear</div>
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+    </div>
+
+    <!-- Map + Charts -->
+    <div class="main-grid">
+        <div class="map-panel">
+            <div class="map-panel-hdr">
+                <span class="map-ttl">TN DISTRICT STATUS MAP</span>
+                <span style="font-family:var(--fm);font-size:9px;color:var(--text-3)">Click any district for drill-down</span>
+            </div>
+            <div id="tn-map"></div>
+            <div class="map-legend">
+                <div class="ml-ttl">Severity</div>
+                <div class="ml-row"><div class="ml-dot" style="background:var(--red)"></div> Critical</div>
+                <div class="ml-row"><div class="ml-dot" style="background:var(--amber)"></div> Active</div>
+                <div class="ml-row"><div class="ml-dot" style="background:var(--blue)"></div> Standby</div>
+                <div class="ml-row"><div class="ml-dot" style="background:var(--green)"></div> Clear</div>
+            </div>
+        </div>
+
+        <div class="charts-col">
+            <div class="chart-panel">
+                <div class="cpanel-hdr">
+                    <div class="cpanel-ttl">Agency Personnel Mobilization</div>
+                </div>
+                <canvas id="agency-chart" style="height:150px !important"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="cpanel-hdr">
+                    <div class="cpanel-ttl amber">Critical Asset Distribution</div>
+                </div>
+                <canvas id="asset-chart" style="height:150px !important"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="cpanel-hdr">
+                    <div class="cpanel-ttl green">District SOS Intensity (Top 8)</div>
+                </div>
+                <canvas id="sos-chart" style="height:140px !important"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regional Table -->
+    <div class="sec-hdr"><div class="sec-line"></div><span class="sec-label">Regional Resource Summary</span><div class="sec-line"></div></div>
+    <div class="table-panel" style="margin-bottom:20px">
+        <div class="tbl-hdr">
+            <div class="tbl-title">District Operational Status</div>
+            <span style="font-family:var(--fm);font-size:9px;color:var(--text-3)">Sorted by urgency</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>District</th>
+                        <th>Status</th>
+                        <th>SOS (Open)</th>
+                        <th>Responders</th>
+                        <th>Utilization</th>
+                        <th>Missions</th>
+                        <th>Shelter Load</th>
+                    </tr>
+                </thead>
+                <tbody id="region-tbody">
+                    <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-3);font-family:var(--fm)">Loading district data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- District Cards -->
+    <div class="sec-hdr">
+        <div class="sec-line"></div>
+        <span class="sec-label">District Overview</span>
+        <div class="sec-count" id="showing-count">All</div>
+        <div class="sec-line"></div>
+    </div>
+    <div class="district-grid" id="district-grid">
+        <div class="empty-state">Loading districts...</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/api.js"></script>
+<script>
+    const TN_DISTRICTS = ["Chennai","Coimbatore","Madurai","Tiruchirappalli","Salem","Tirunelveli","Vellore","Erode","Thoothukudi","Thanjavur","Dindigul","Ranipet","Karur","Namakkal","Krishnagiri","Dharmapuri","Villupuram","Cuddalore","Nagapattinam","Tiruvarur","Mayiladuthurai","Ariyalur","Perambalur","Pudukkottai","Sivaganga","Virudhunagar","Ramanathapuram","Theni","Nilgiris","Tiruppur","Kanchipuram","Chengalpattu","Kanyakumari","Tiruvallur","Kallakurichi","Tirupattur","Tenkasi","Tiruvannamalai"];
+    const DIST_COORDS = {"Chennai":[13.0827,80.2707],"Coimbatore":[11.0168,76.9558],"Madurai":[9.9252,78.1198],"Tiruchirappalli":[10.7905,78.7047],"Salem":[11.6643,78.1460],"Tirunelveli":[8.7139,77.7567],"Vellore":[12.9165,79.1325],"Erode":[11.3410,77.7172],"Thoothukudi":[8.7642,78.1348],"Thanjavur":[10.7870,79.1378],"Dindigul":[10.3673,77.9803],"Ranipet":[12.9327,79.3320],"Karur":[10.9601,78.0766],"Namakkal":[11.2189,78.1674],"Krishnagiri":[12.5186,78.2137],"Dharmapuri":[12.1278,78.1574],"Villupuram":[11.9397,79.4917],"Cuddalore":[11.7447,79.7689],"Nagapattinam":[10.7654,79.8428],"Tiruvarur":[10.7718,79.6368],"Mayiladuthurai":[11.1028,79.6510],"Ariyalur":[11.1382,79.0778],"Perambalur":[11.2340,78.8796],"Pudukkottai":[10.3797,78.8206],"Sivaganga":[9.8473,78.4872],"Virudhunagar":[9.5850,77.9624],"Ramanathapuram":[9.3639,78.8395],"Theni":[10.0106,77.4772],"Nilgiris":[11.4916,76.7337],"Tiruppur":[11.1085,77.3411],"Kanchipuram":[12.8324,79.7036],"Chengalpattu":[12.6926,80.0086],"Tiruvallur":[13.1434,79.9089],"Kallakurichi":[11.7367,78.9584],"Tirupattur":[12.4965,78.5718],"Tenkasi":[8.9609,77.3150],"Tiruvannamalai":[12.2269,79.0747],"Kanyakumari":[8.0883,77.5385]};
+    const SEV_COLOR = { critical:'#f43f5e', active:'#f59e0b', standby:'#3b82f6', clear:'#10b981' };
+
+    /* ── Map init ── */
+    const tnMap = L.map('tn-map', { zoomControl: true }).setView([10.8, 78.5], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, attribution: '&copy; CartoDB' }).addTo(tnMap);
+    const markerLayer = L.layerGroup().addTo(tnMap);
+
+    /* ── Charts init ── */
+    const chartOpts = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color:'#3d5470', font:{size:9} } },
+            x: { grid: { display: false }, ticks: { color:'#3d5470', font:{size:9}, maxRotation: 35 } }
+        }
+    };
+
+    let agencyChart = null, assetChart = null, sosChart = null;
+
+    function initCharts() {
+        agencyChart = new Chart(document.getElementById('agency-chart'), {
+            type: 'bar',
+            data: { labels: [], datasets: [{ label:'Personnel', data:[], backgroundColor:'rgba(59,130,246,0.45)', borderColor:'#3b82f6', borderWidth:1, borderRadius:3 }] },
+            options: { ...chartOpts }
+        });
+        assetChart = new Chart(document.getElementById('asset-chart'), {
+            type: 'bar',
+            data: { labels: [], datasets: [
+                { label:'Boats', data:[], backgroundColor:'rgba(245,158,11,0.45)', borderColor:'#f59e0b', borderWidth:1, borderRadius:3 },
+                { label:'Ambulances', data:[], backgroundColor:'rgba(244,63,94,0.35)', borderColor:'#f43f5e', borderWidth:1, borderRadius:3 }
+            ]},
+            options: { ...chartOpts, plugins: { legend: { display: true, labels: { color:'#3d5470', font:{size:9} } } } }
+        });
+        sosChart = new Chart(document.getElementById('sos-chart'), {
+            type: 'bar',
+            data: { labels: [], datasets: [
+                { label:'Open SOS', data:[], backgroundColor:'rgba(244,63,94,0.4)', borderColor:'#f43f5e', borderWidth:1, borderRadius:3 },
+                { label:'Missions', data:[], backgroundColor:'rgba(245,158,11,0.35)', borderColor:'#f59e0b', borderWidth:1, borderRadius:3 }
+            ]},
+            options: { ...chartOpts, plugins: { legend: { display: true, labels: { color:'#3d5470', font:{size:9} } } } }
+        });
+    }
+
+    function updateCharts(directory, districtData) {
+        if (directory?.length) {
+            const shorts = directory.map(a => a.name.split(' ')[0]);
+            agencyChart.data.labels = shorts;
+            agencyChart.data.datasets[0].data = directory.map(a => a.personnel_count || 0);
+            agencyChart.update('none');
+
+            assetChart.data.labels = shorts;
+            assetChart.data.datasets[0].data = directory.map(a => a.assets?.boat || 0);
+            assetChart.data.datasets[1].data = directory.map(a => a.assets?.ambulance || 0);
+            assetChart.update('none');
+        }
+        if (districtData?.length) {
+            const top8 = [...districtData].filter(d => d.open_sos > 0 || d.active_missions > 0)
+                .sort((a,b) => b.open_sos - a.open_sos).slice(0, 8);
+            sosChart.data.labels = top8.map(d => d.district.slice(0,8));
+            sosChart.data.datasets[0].data = top8.map(d => d.open_sos);
+            sosChart.data.datasets[1].data = top8.map(d => d.active_missions);
+            sosChart.update('none');
+        }
+    }
+
+    /* ── Filters ── */
+    let sevFilters = new Set();
+    let districtData = [];
+
+    function toggleSev(el, sev) {
+        el.classList.toggle('selected');
+        sevFilters.has(sev) ? sevFilters.delete(sev) : sevFilters.add(sev);
+        renderDistricts(districtData);
+    }
+
+    function resetFilters() {
+        document.getElementById('district-select').value = '';
+        document.querySelectorAll('.sev-chip').forEach(c => c.classList.remove('selected'));
+        sevFilters.clear();
+        loadDistricts([], {});
+        closeInsight();
+    }
+
+    function onDistrictChange() {
+        const val = document.getElementById('district-select').value;
+        if (val) {
+            const d = districtData.find(x => x.district === val);
+            if (d) showDrillDown(d);
+        } else { closeInsight(); }
+        loadDistricts([], {});
+    }
+
+    function closeInsight() { document.getElementById('district-insight').style.display = 'none'; }
+
+    function showDrillDown(d) {
+        const el = document.getElementById('district-insight');
+        el.style.display = 'block';
+        el.style.borderLeftColor = SEV_COLOR[d.severity] || 'var(--blue)';
+        document.getElementById('insight-name').textContent = d.district;
+        document.getElementById('insight-name').style.color = SEV_COLOR[d.severity] || 'var(--blue)';
+        document.getElementById('insight-sev').textContent = `Severity: ${d.severity.toUpperCase()} · SOS Demand: ${d.sos_intensity || '—'} · Utilization: ${d.utilization_pct || 0}%`;
+        document.getElementById('insight-sev').style.color = SEV_COLOR[d.severity];
+        document.getElementById('insight-sos').textContent = d.open_sos;
+        document.getElementById('insight-resp').textContent = d.total_responders;
+        document.getElementById('insight-miss').textContent = d.active_missions;
+        document.getElementById('insight-shelter').textContent = (d.shelter_fill_pct || 0) + '%';
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (DIST_COORDS[d.district]) tnMap.flyTo(DIST_COORDS[d.district], 10);
+    }
+
+    /* ── Map update ── */
+    function updateMap(data) {
+        markerLayer.clearLayers();
+        data.forEach(d => {
+            const coords = DIST_COORDS[d.district];
+            if (!coords) return;
+            const color = SEV_COLOR[d.severity] || '#555';
+            const base = d.critical_shortage ? 22 : (d.total_responders > 0 ? 16 : 11);
+            const sz = Math.min(base + Math.floor(d.open_sos * 3), 36);
+
+            const icon = L.divIcon({
+                className: '',
+                html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.6);box-shadow:0 0 14px ${color}88;display:flex;align-items:center;justify-content:center;font-size:${sz < 16 ? 8 : 10}px;color:rgba(0,0,0,0.8);font-weight:700;">${d.open_sos > 0 ? d.open_sos : ''}</div>`,
+                iconSize: [sz, sz], iconAnchor: [sz/2, sz/2]
+            });
+
+            L.marker(coords, { icon }).addTo(markerLayer)
+                .bindPopup(`
+                    <div style="font-family:'IBM Plex Sans',sans-serif;min-width:180px">
+                        <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;color:${color}">${d.district}</div>
+                        <div style="font-size:11px;line-height:1.7;color:#7f9ab8">
+                            Status: <b style="color:${color}">${d.severity.toUpperCase()}</b><br>
+                            🆘 Open SOS: <b style="color:#e2e8f0">${d.open_sos}</b><br>
+                            👥 Responders: <b style="color:#e2e8f0">${d.available_responders}/${d.total_responders}</b> (${d.utilization_pct}% busy)<br>
+                            🎯 Active Missions: <b style="color:#e2e8f0">${d.active_missions}</b><br>
+                            🏠 Shelter: <b style="color:#e2e8f0">${d.shelter_fill_pct}% full</b>
+                            ${d.critical_shortage ? '<br><b style="color:#f43f5e">⚠ CRITICAL RESOURCE GAP</b>' : ''}
+                        </div>
+                        <div style="margin-top:8px;padding:5px 8px;background:rgba(59,130,246,0.1);border-radius:4px;font-size:10px;color:#3b82f6;cursor:pointer;" onclick="document.getElementById('district-select').value='${d.district}';onDistrictChange()">View full drill-down →</div>
+                    </div>
+                `)
+                .on('click', () => showDrillDown(d));
+
+            if (d.critical_shortage) {
+                L.circle(coords, { radius: 8000, color: '#f43f5e', weight: 1, fillOpacity: 0.06, dashArray: '5,8' }).addTo(markerLayer);
+            }
+        });
+    }
+
+    /* ── Table ── */
+    function renderRegionTable(data) {
+        const tbody = document.getElementById('region-tbody');
+        const sorted = [...data]
+            .filter(d => d.total_responders > 0 || d.active_missions > 0 || d.open_sos > 0)
+            .sort((a,b) => {
+                const o = { critical:0, active:1, standby:2, clear:3 };
+                return (o[a.severity]||3) - (o[b.severity]||3) || b.open_sos - a.open_sos;
+            });
+
+        if (!sorted.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-3);font-family:var(--fm)">No district data from API</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = sorted.map(d => {
+            const utilColor = d.utilization_pct > 80 ? 'var(--red)' : d.utilization_pct > 50 ? 'var(--amber)' : 'var(--green)';
+            const shelColor = d.shelter_fill_pct > 90 ? 'var(--red)' : d.shelter_fill_pct > 70 ? 'var(--amber)' : 'var(--green)';
+            return `
+                <tr class="${d.critical_shortage ? 'crit' : ''}" onclick="showDrillDown(${JSON.stringify(d).replace(/"/g,'&quot;')})" style="cursor:pointer">
+                    <td>
+                        <div class="dist-name">${d.district} ${d.critical_shortage ? '⚠️' : ''}</div>
+                    </td>
+                    <td><span class="sev-pill ${d.severity}">${d.severity.toUpperCase()}</span></td>
+                    <td style="color:${d.open_sos > 0 ? 'var(--red)' : 'var(--text-3)'}; font-weight:${d.open_sos > 0 ? '700' : '400'}">${d.open_sos}</td>
+                    <td>${d.available_responders}<span style="color:var(--text-3)">/${d.total_responders}</span></td>
+                    <td>
+                        <div class="bar-cell">
+                            <div class="mini-bar"><div class="mini-fill" style="width:${d.utilization_pct}%;background:${utilColor}"></div></div>
+                            <span style="color:${utilColor}">${d.utilization_pct}%</span>
+                        </div>
+                    </td>
+                    <td style="color:${d.active_missions > 0 ? 'var(--amber)' : 'var(--text-3)'}">${d.active_missions}</td>
+                    <td>
+                        <div class="bar-cell">
+                            <div class="mini-bar"><div class="mini-fill" style="width:${d.shelter_fill_pct}%;background:${shelColor}"></div></div>
+                            <span style="color:${shelColor}">${d.shelter_fill_pct}%</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    /* ── District Cards ── */
+    function renderDistricts(data) {
+        const grid = document.getElementById('district-grid');
+        let filtered = [...data];
+        if (sevFilters.size > 0) filtered = filtered.filter(d => sevFilters.has(d.severity));
+        const distF = document.getElementById('district-select').value;
+        if (distF) filtered = filtered.filter(d => d.district === distF);
+
+        filtered.sort((a,b) => {
+            const o = { critical:0, active:1, standby:2, clear:3 };
+            return (o[a.severity]||3) - (o[b.severity]||3) || b.open_sos - a.open_sos;
+        });
+
+        document.getElementById('showing-count').textContent = `${filtered.length} district${filtered.length !== 1 ? 's' : ''}`;
+
+        if (!filtered.length) { grid.innerHTML = '<div class="empty-state">No districts match the current filter.</div>'; return; }
+
+        grid.innerHTML = filtered.map(d => {
+            const shelColor = d.shelter_fill_pct > 90 ? 'var(--red)' : d.shelter_fill_pct > 70 ? 'var(--amber)' : 'var(--green)';
+            return `
+                <div class="dc ${d.severity}" onclick="showDrillDown(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+                    <div class="dc-top">
+                        <div class="dc-name">${d.district}</div>
+                        <span class="sev-pill ${d.severity}">${d.severity.toUpperCase()}</span>
+                    </div>
+                    <div class="dc-stats">
+                        <div class="dcs">
+                            <div class="dcs-val" style="color:var(--red)">${d.open_sos}</div>
+                            <div class="dcs-lbl">SOS</div>
+                        </div>
+                        <div class="dcs">
+                            <div class="dcs-val" style="color:var(--blue)">${d.total_responders}</div>
+                            <div class="dcs-lbl">Resp.</div>
+                        </div>
+                        <div class="dcs">
+                            <div class="dcs-val" style="color:var(--amber)">${d.active_missions}</div>
+                            <div class="dcs-lbl">Missions</div>
+                        </div>
+                    </div>
+                    ${d.shelter_capacity > 0 ? `
+                        <div class="dc-bar-row">
+                            <span class="dc-bar-lbl" style="color:var(--text-3)">Shelter</span>
+                            <div class="dc-bar"><div class="dc-bar-fill" style="width:${d.shelter_fill_pct}%;background:${shelColor}"></div></div>
+                            <span class="dc-bar-lbl" style="color:${shelColor}">${d.shelter_fill_pct}%</span>
+                        </div>
+                    ` : ''}
+                    ${d.critical_shortage ? '<div class="crit-flag">⚠ Critical Resource Gap</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    /* ── Ticker update ── */
+    function updateTicker(districtData, stats) {
+        const criticals = districtData.filter(d => d.severity === 'critical');
+        const items = [];
+        if (stats.total_sos) items.push(`<span class="ticker-item"><span class="dot" style="background:var(--red)"></span> Total SOS Logged: ${stats.total_sos}</span>`);
+        if (stats.rescued) items.push(`<span class="ticker-item"><span class="dot" style="background:var(--green)"></span> ${stats.rescued} persons rescued successfully</span>`);
+        criticals.forEach(d => items.push(`<span class="ticker-item"><span class="dot" style="background:var(--red)"></span> ⚠ CRITICAL: ${d.district} — ${d.open_sos} open SOS, ${d.utilization_pct}% unit utilization</span>`));
+        if (stats.responders_available) items.push(`<span class="ticker-item"><span class="dot" style="background:var(--blue)"></span> ${stats.responders_available} responders available statewide</span>`);
+        if (!items.length) return;
+        const doubled = [...items, ...items].join('<span style="padding:0 20px;color:var(--border-hi)">◆</span>');
+        document.getElementById('ticker-inner').innerHTML = doubled;
+    }
+
+    /* ── Main refresh ── */
+    async function refresh() {
+        try {
+            const [stats, directory] = await Promise.all([
+                fetch(`${API}/strategic/stats`).then(r => r.ok ? r.json() : {}),
+                fetch(`${API}/agencies/directory`).then(r => r.ok ? r.json() : [])
+            ]);
+
+            document.getElementById('k-sos').textContent     = stats.total_sos ?? '—';
+            document.getElementById('k-active').textContent  = stats.active_sos ?? '—';
+            document.getElementById('k-rescued').textContent = stats.rescued ?? '—';
+            document.getElementById('k-resp').textContent    = stats.responders_available ?? '—';
+            document.getElementById('k-success').textContent = (stats.success_rate_pct != null ? stats.success_rate_pct + '%' : '—');
+            document.getElementById('ts').textContent = '⏱ ' + new Date().toLocaleTimeString();
+
+            await loadDistricts(directory, stats);
+            updateCharts(directory, districtData);
+        } catch (e) { console.error("Refresh error:", e); }
+    }
+
+    async function loadDistricts(directory, stats = {}) {
+        const df = document.getElementById('district-select').value;
+        const url = df ? `${API}/strategic/districts?district=${encodeURIComponent(df)}` : `${API}/strategic/districts`;
+        const data = await fetch(url).then(r => r.json()).catch(() => []);
+        districtData = data;
+        renderDistricts(data);
+        updateMap(data);
+        renderRegionTable(data);
+        updateTicker(data, stats);
+    }
+
+    async function fetchDistrictList() {
+        try {
+            const res = await fetch(`${API}/strategic/districts/list`);
+            if (!res.ok) { populateDistrictsFallback(); return; }
+            const list = await res.json();
+            const sel = document.getElementById('district-select');
+            sel.innerHTML = '<option value="">All 38 Districts</option>';
+            [...list].sort().forEach(d => {
+                const o = document.createElement('option');
+                o.value = d; o.textContent = d; sel.appendChild(o);
+            });
+        } catch { populateDistrictsFallback(); }
+    }
+
+    function populateDistrictsFallback() {
+        const sel = document.getElementById('district-select');
+        sel.innerHTML = '<option value="">All 38 Districts</option>';
+        TN_DISTRICTS.sort().forEach(d => {
+            const o = document.createElement('option');
+            o.value = d; o.textContent = d; sel.appendChild(o);
+        });
+    }
+
+    initCharts();
+    fetchDistrictList();
+    refresh();
+    setInterval(refresh, 10000);
+</script>
+</body>
+</html>

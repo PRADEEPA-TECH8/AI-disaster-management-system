@@ -1,6 +1,6 @@
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? "http://localhost:8000/api"
-    : "https://disaster-management-system-yy3e.onrender.com/api"; 
+    : "https://ai-disaster-management-system.onrender.com/api"; 
 
 async function apiFetch(path, options = {}) {
   try {
